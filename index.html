@@ -385,6 +385,87 @@
         body.device-sp .input-area textarea { font-size: 16px; min-height: 46px; }
         body.device-sp .msg-bot, body.device-sp .msg-user,
         body.device-sp .msg-praise, body.device-sp .msg-care { font-size: 15px; }
+
+        /* スタート画面 */
+        .start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(160deg, #e8f0fb 0%, #f0f4f8 60%, #e8f5ec 100%);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            animation: fadeIn 0.4s ease;
+        }
+        .start-screen.hidden { display: none; }
+
+        .start-logo {
+            font-size: 52px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 2px 6px rgba(59,130,182,0.2));
+        }
+        .start-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--warm-accent);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .start-subtitle {
+            font-size: 13px;
+            color: var(--warm-text-light);
+            margin-bottom: 36px;
+            text-align: center;
+            line-height: 1.7;
+        }
+        .start-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 28px 24px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 4px 24px rgba(100,130,160,0.13);
+        }
+        .start-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--warm-text);
+            margin-bottom: 8px;
+            display: block;
+        }
+        .start-input {
+            width: 100%;
+            border: 2px solid var(--warm-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-family: inherit;
+            color: var(--warm-text);
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 18px;
+        }
+        .start-input:focus { border-color: var(--warm-accent); }
+        .start-input::placeholder { color: #9bb0c4; }
+        .start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--warm-accent), #5a9ec0);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            letter-spacing: 1px;
+        }
+        .start-btn:hover { opacity: 0.92; }
+        .start-btn:active { transform: scale(0.98); }
+        .start-btn:disabled { opacity: 0.5; cursor: default; }
     </style>
 </head>
 <body>
@@ -394,6 +475,18 @@
     <div class="header-right">
         <button class="header-btn" onclick="showSettings()">⚙ 設定</button>
         <button class="header-btn" onclick="location.reload()">↺ リセット</button>
+    </div>
+</div>
+
+<!-- スタート画面 -->
+<div class="start-screen" id="startScreen">
+    <div class="start-logo">📋</div>
+    <div class="start-title">週報作成アシスタント</div>
+    <div class="start-subtitle">介護・福祉スタッフの週報を<br>AIがサポートします</div>
+    <div class="start-card">
+        <label class="start-label" for="startNameInput">スタッフ名（またはニックネーム）</label>
+        <input id="startNameInput" class="start-input" type="text" placeholder="例：田中、たなか など" maxlength="20" autocomplete="off">
+        <button id="startBtn" class="start-btn" onclick="startApp()" disabled>はじめる ➤</button>
     </div>
 </div>
 
@@ -651,13 +744,29 @@ async function doWellbeingCheck() {
 // ============================================================
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// スタート画面の入力監視
+document.getElementById('startNameInput').addEventListener('input', function() {
+    document.getElementById('startBtn').disabled = this.value.trim().length === 0;
+});
+document.getElementById('startNameInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value.trim()) startApp();
+});
+
+function startApp() {
+    const name = document.getElementById('startNameInput').value.trim();
+    if (!name) return;
+    reporterName = name;
+    currentStep = 'ask_device';
+    document.getElementById('startScreen').classList.add('hidden');
+    startFlow();
+}
+
 async function startFlow() {
     updateProgress();
+    await delay(400);
+    addBot(`${reporterName}さん、こんにちは！✨\n今週もお疲れさまでした。一緒に週報を作りましょう！`);
     await delay(600);
-    addBot('こんにちは！✨ 週報作成アシスタントです。\n今週もお疲れさまでした。一緒に週報を作りましょう！');
-    await delay(800);
-    addBot('まず、あなたのお名前（またはニックネーム）を教えてください。');
-    showInput('例：田中、たなか、T など');
+    nextStep();
 }
 
 let continueFlowFn = null;
@@ -890,12 +999,6 @@ async function processInput(text) {
     isWaiting = true;
     try {
         switch(currentStep) {
-            case 'ask_name':
-                reporterName = text;
-                currentStep = 'ask_device';
-                await nextStep();
-                break;
-
             case 'ask_period':
                 reportData.period = text;
                 addProgress('✅ 期間を記録しました');
@@ -1260,9 +1363,9 @@ userInput.addEventListener('input', () => {
 });
 
 // ============================================================
-// 起動
+// 起動（スタート画面のボタンから startApp() → startFlow() が呼ばれる）
 // ============================================================
-startFlow();
+document.getElementById('startNameInput').focus();
 </script>
 </body>
 </html>
