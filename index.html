@@ -523,6 +523,34 @@
         .role-btn-icon { font-size: 36px; display: block; margin-bottom: 10px; }
         .role-btn-label { font-size: 15px; font-weight: 700; color: var(--warm-text); }
         .role-btn-desc { font-size: 11px; color: var(--warm-text-light); margin-top: 4px; }
+
+        /* 入居者入力画面 */
+        .resident-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(160deg, #e8f0fb 0%, #f0f4f8 60%, #e8f5ec 100%);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            animation: fadeIn 0.35s ease;
+        }
+        .resident-screen.active { display: flex; }
+        .resident-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border: 2px solid var(--warm-border);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--warm-text-light);
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -551,6 +579,19 @@
             <span class="role-btn-label">居室担当</span>
             <div class="role-btn-desc">利用者ケア担当</div>
         </button>
+    </div>
+</div>
+
+<!-- 入居者様氏名入力画面 -->
+<div class="resident-screen" id="residentScreen">
+    <div class="start-logo">🏠</div>
+    <div class="resident-badge" id="residentBadge"></div>
+    <div class="start-title" style="margin-bottom:6px;">入居者様の情報</div>
+    <div class="start-subtitle">週報を作成する入居者様のお名前を<br>入力してください</div>
+    <div class="start-card">
+        <label class="start-label" for="residentNameInput">入居者様 氏名</label>
+        <input id="residentNameInput" class="start-input" type="text" placeholder="例：山田 花子 様" maxlength="30" autocomplete="off">
+        <button id="residentBtn" class="start-btn" onclick="confirmResident()" disabled>次へ ➤</button>
     </div>
 </div>
 
@@ -649,6 +690,7 @@
 // ============================================================
 let reporterName = '';
 let reporterRole = '';
+let residentName = '';
 let deviceType = '';
 let currentStep = 'ask_name';
 let reportData = {};
@@ -840,15 +882,33 @@ function startApp() {
 
 function selectRole(role) {
     reporterRole = role;
-    currentStep = 'ask_device';
     document.getElementById('roleScreen').classList.remove('active');
+    // 入居者入力画面へ
+    document.getElementById('residentBadge').textContent = `${reporterName}（${reporterRole}）`;
+    document.getElementById('residentScreen').classList.add('active');
+    setTimeout(() => document.getElementById('residentNameInput').focus(), 100);
+}
+
+document.getElementById('residentNameInput').addEventListener('input', function() {
+    document.getElementById('residentBtn').disabled = this.value.trim().length === 0;
+});
+document.getElementById('residentNameInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value.trim()) confirmResident();
+});
+
+function confirmResident() {
+    const name = document.getElementById('residentNameInput').value.trim();
+    if (!name) return;
+    residentName = name;
+    currentStep = 'ask_device';
+    document.getElementById('residentScreen').classList.remove('active');
     startFlow();
 }
 
 async function startFlow() {
     updateProgress();
     await delay(400);
-    addBot(`${reporterName}さん（${reporterRole}）、こんにちは！✨\n今週もお疲れさまでした。一緒に週報を作りましょう！`);
+    addBot(`${reporterName}さん（${reporterRole}）、こんにちは！✨\n今週もお疲れさまでした。\n${residentName}様の週報を一緒に作りましょう！`);
     await delay(600);
     nextStep();
 }
@@ -1245,35 +1305,37 @@ async function generateReport() {
 
     const systemPrompt = `あなたは介護・福祉施設スタッフの週報作成を支援するプロです。
 提供された情報をもとに、読みやすく温かみのある週報を日本語で作成してください。
+この週報は担当スタッフが特定の入居者様に関して作成するものです。
 
 出力形式：
-【週報】${reporterName} / ${reportData.period || dateStr}
+【週報】${reporterName}（${reporterRole}） / ${residentName}様 / ${reportData.period || dateStr}
 
 ■ 今週の目標
-（目標内容）
+（${residentName}様への目標内容）
 
 ■ 取り組みと成果
-（うまくいったこと・成果）
+（${residentName}様に対してうまくいったこと・成果）
 
 ■ 課題と対応
-（課題・うまくいかなかったこと、改善策）
+（${residentName}様への関わりで生じた課題・改善策）
 
 ■ 季節・行事対応
-（季節的な業務や行事）
+（${residentName}様に関連する季節的な業務や行事）
 
 ■ 新しい取り組み・気づき
-（新しい取り組み）
+（${residentName}様への新しい取り組みや気づき）
 
 ■ 達成度と振り返り
 （進捗・総括）
 
 ■ 来週の目標
-（来週に向けた意気込みを一言）
+（${residentName}様への来週の目標を一言）
 
 自然で読みやすい文章で、各項目を2〜4文でまとめてください。
-ポジティブで前向きなトーンを維持してください。`;
+ポジティブで前向きなトーンを維持し、入居者様の名前を適切に織り交ぜてください。`;
 
-    const userMsg = `スタッフ名：${reporterName}
+    const userMsg = `スタッフ名：${reporterName}（${reporterRole}）
+担当入居者様：${residentName}様
 対象期間：${reportData.period || '今週'}
 今週の目標：${reportData.goal_image || '未記入'}
 うまくいったこと：${reportData.going_well || '未記入'}
@@ -1289,7 +1351,7 @@ async function generateReport() {
 function generateTemplate() {
     const now = new Date();
     const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
-    return `【週報】${reporterName} / ${reportData.period || dateStr}
+    return `【週報】${reporterName}（${reporterRole}） / ${residentName}様 / ${reportData.period || dateStr}
 
 ■ 今週の目標
 ${reportData.goal_image || '（未記入）'}
@@ -1311,7 +1373,7 @@ ${reportData.new_tasks || '特になし'}
 達成度：${reportData.progress || '未記入'}
 
 ■ 来週の目標
-来週も引き続き頑張ります。`;
+${residentName}様への支援を引き続き丁寧に行います。`;
 }
 
 // ============================================================
@@ -1319,7 +1381,7 @@ ${reportData.new_tasks || '特になし'}
 // ============================================================
 function openReport() {
     document.getElementById('reportText').textContent = generatedReport;
-    document.getElementById('reportOverlayTitle').textContent = `📝 ${reporterName}さんの週報`;
+    document.getElementById('reportOverlayTitle').textContent = `📝 ${residentName}様 / ${reporterName}（${reporterRole}）`;
     document.getElementById('reportOverlay').classList.add('active');
 }
 
