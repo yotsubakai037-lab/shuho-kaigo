@@ -466,6 +466,63 @@
         .start-btn:hover { opacity: 0.92; }
         .start-btn:active { transform: scale(0.98); }
         .start-btn:disabled { opacity: 0.5; cursor: default; }
+
+        /* 役割選択画面 */
+        .role-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(160deg, #e8f0fb 0%, #f0f4f8 60%, #e8f5ec 100%);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            animation: fadeIn 0.35s ease;
+        }
+        .role-screen.active { display: flex; }
+
+        .role-greeting {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--warm-text);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .role-question {
+            font-size: 14px;
+            color: var(--warm-text-light);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .role-buttons {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            max-width: 360px;
+        }
+        .role-btn {
+            flex: 1;
+            background: white;
+            border: 3px solid var(--warm-border);
+            border-radius: 18px;
+            padding: 28px 12px;
+            text-align: center;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            box-shadow: 0 2px 12px var(--warm-shadow);
+        }
+        .role-btn:hover {
+            border-color: var(--warm-accent);
+            background: #f0f7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59,130,182,0.15);
+        }
+        .role-btn:active { transform: scale(0.97); }
+        .role-btn-icon { font-size: 36px; display: block; margin-bottom: 10px; }
+        .role-btn-label { font-size: 15px; font-weight: 700; color: var(--warm-text); }
+        .role-btn-desc { font-size: 11px; color: var(--warm-text-light); margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -475,6 +532,25 @@
     <div class="header-right">
         <button class="header-btn" onclick="showSettings()">⚙ 設定</button>
         <button class="header-btn" onclick="location.reload()">↺ リセット</button>
+    </div>
+</div>
+
+<!-- 役割選択画面 -->
+<div class="role-screen" id="roleScreen">
+    <div class="start-logo">📋</div>
+    <div class="role-greeting" id="roleGreeting"></div>
+    <div class="role-question">役割を選んでください</div>
+    <div class="role-buttons">
+        <button class="role-btn" onclick="selectRole('リーダー')">
+            <span class="role-btn-icon">👑</span>
+            <span class="role-btn-label">リーダー</span>
+            <div class="role-btn-desc">チームまとめ役</div>
+        </button>
+        <button class="role-btn" onclick="selectRole('居室担当')">
+            <span class="role-btn-icon">🏠</span>
+            <span class="role-btn-label">居室担当</span>
+            <div class="role-btn-desc">利用者ケア担当</div>
+        </button>
     </div>
 </div>
 
@@ -572,6 +648,7 @@
 // 状態管理
 // ============================================================
 let reporterName = '';
+let reporterRole = '';
 let deviceType = '';
 let currentStep = 'ask_name';
 let reportData = {};
@@ -756,15 +833,22 @@ function startApp() {
     const name = document.getElementById('startNameInput').value.trim();
     if (!name) return;
     reporterName = name;
-    currentStep = 'ask_device';
     document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('roleGreeting').textContent = `${reporterName}さん、こんにちは！`;
+    document.getElementById('roleScreen').classList.add('active');
+}
+
+function selectRole(role) {
+    reporterRole = role;
+    currentStep = 'ask_device';
+    document.getElementById('roleScreen').classList.remove('active');
     startFlow();
 }
 
 async function startFlow() {
     updateProgress();
     await delay(400);
-    addBot(`${reporterName}さん、こんにちは！✨\n今週もお疲れさまでした。一緒に週報を作りましょう！`);
+    addBot(`${reporterName}さん（${reporterRole}）、こんにちは！✨\n今週もお疲れさまでした。一緒に週報を作りましょう！`);
     await delay(600);
     nextStep();
 }
