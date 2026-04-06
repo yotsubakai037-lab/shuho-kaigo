@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>週報作成アシスタント</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --warm-bg: #f0f4f8;
+            --warm-card: #f8fafc;
+            --warm-accent: #3b82b6;
+            --warm-accent-light: #60a5e0;
+            --warm-green: #5a9e6f;
+            --warm-green-light: #e8f5ec;
+            --warm-text: #2c3e50;
+            --warm-text-light: #6b7c93;
+            --warm-border: #d1dce6;
+            --warm-shadow: rgba(100,130,160,0.1);
+            --warm-user-bg: #3b82b6;
+            --warm-bot-bg: #f8fafc;
+            --care-bg: #fef3f0;
+            --care-border: #f0b8a8;
+            --care-text: #8b4a3a;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Hiragino Sans", Meiryo, sans-serif;
+            background: var(--warm-bg);
+            color: var(--warm-text);
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3b82b6, #5a9ec0);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(100,130,160,0.2);
+        }
+
+        .header-title { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+
+        .header-right { display: flex; gap: 8px; align-items: center; }
+
+        .header-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            color: var(--warm-accent);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+        .header-btn:hover { background: white; }
+
+        .progress-bar-container { height: 4px; background: rgba(255,255,255,0.3); flex-shrink: 0; }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--warm-green), #7ec98f);
+            transition: width 0.6s ease;
+            width: 0%;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .msg-bot {
+            max-width: 85%;
+            background: var(--warm-bot-bg);
+            border: 1px solid var(--warm-border);
+            border-radius: 2px 18px 18px 18px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 4px var(--warm-shadow);
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 14px;
+            animation: fadeIn 0.35s ease;
+            color: var(--warm-text);
+            word-break: break-word;
+        }
+
+        .msg-user {
+            max-width: 85%;
+            background: var(--warm-user-bg);
+            color: white;
+            border-radius: 18px 2px 18px 18px;
+            padding: 12px 16px;
+            align-self: flex-end;
+            line-height: 1.8;
+            font-size: 14px;
+            animation: fadeIn 0.35s ease;
+            box-shadow: 0 1px 4px rgba(59,130,182,0.3);
+            word-break: break-word;
+        }
+
+        .msg-praise {
+            max-width: 85%;
+            background: linear-gradient(135deg, var(--warm-green-light), #d4edda);
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #2d5e3a;
+            line-height: 1.8;
+            border: 1px solid #b8dcc2;
+            animation: fadeIn 0.35s ease;
+            word-break: break-word;
+        }
+
+        .msg-progress {
+            background: linear-gradient(135deg, #e8f0fe, #d4e4f7);
+            border-left: 4px solid var(--warm-accent);
+            border-radius: 0 8px 8px 0;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--warm-accent);
+            font-weight: 600;
+            animation: fadeIn 0.35s ease;
+        }
+
+        .msg-care {
+            max-width: 85%;
+            background: var(--care-bg);
+            border: 1px solid var(--care-border);
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: var(--care-text);
+            line-height: 1.8;
+            animation: fadeIn 0.35s ease;
+            word-break: break-word;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .choices { display: flex; flex-wrap: wrap; gap: 8px; animation: fadeIn 0.35s ease; }
+
+        .choice-btn {
+            background: white;
+            border: 2px solid var(--warm-accent);
+            color: var(--warm-accent);
+            border-radius: 24px;
+            padding: 10px 18px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        .choice-btn:hover { background: var(--warm-accent); color: white; box-shadow: 0 2px 8px rgba(59,130,182,0.3); }
+        .choice-btn:active { transform: scale(0.96); }
+
+        .device-cards { display: flex; gap: 12px; animation: fadeIn 0.35s ease; }
+
+        .device-card {
+            flex: 1;
+            background: white;
+            border: 3px solid var(--warm-border);
+            border-radius: 14px;
+            padding: 18px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            max-width: 160px;
+        }
+        .device-card:hover { border-color: var(--warm-accent-light); }
+        .device-card.selected { border-color: var(--warm-accent); background: #f0f7ff; box-shadow: 0 2px 12px rgba(59,130,182,0.15); }
+        .device-card-icon { font-size: 32px; display: block; margin-bottom: 6px; }
+        .device-card-label { font-size: 13px; font-weight: 600; color: var(--warm-text); }
+
+        .input-area {
+            flex-shrink: 0;
+            background: var(--warm-card);
+            border-top: 1px solid var(--warm-border);
+            padding: 10px 14px;
+            display: none;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .input-area.active { display: flex; }
+
+        .input-area textarea {
+            flex: 1;
+            border: 2px solid var(--warm-border);
+            border-radius: 18px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            min-height: 42px;
+            max-height: 100px;
+            line-height: 1.5;
+            outline: none;
+            background: white;
+            color: var(--warm-text);
+            transition: border-color 0.2s;
+        }
+        .input-area textarea:focus { border-color: var(--warm-accent); }
+        .input-area textarea::placeholder { color: #9bb0c4; }
+
+        .send-btn {
+            background: var(--warm-accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(59,130,182,0.3);
+        }
+        .send-btn:hover { background: #2d6a9e; }
+
+        .loading { display: flex; gap: 5px; padding: 12px 16px; }
+        .loading span {
+            width: 8px; height: 8px;
+            background: var(--warm-accent-light);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .loading span:nth-child(2) { animation-delay: 0.2s; }
+        .loading span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40%           { transform: scale(1); }
+        }
+
+        .share-banner { display: flex; flex-wrap: wrap; gap: 8px; animation: fadeIn 0.35s ease; margin-top: 4px; }
+        .share-banner a, .share-banner button {
+            display: flex; align-items: center; gap: 6px;
+            background: white; border: 1.5px solid var(--warm-border);
+            border-radius: 12px; padding: 10px 14px;
+            text-decoration: none; color: var(--warm-text);
+            font-size: 13px; font-weight: 500;
+            transition: all 0.2s; cursor: pointer; font-family: inherit;
+        }
+        .share-banner a:hover, .share-banner button:hover {
+            border-color: var(--warm-accent); background: #f0f7ff;
+            box-shadow: 0 2px 8px var(--warm-shadow);
+        }
+        .share-icon { font-size: 17px; }
+
+        /* Report overlay */
+        .report-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--warm-bg); z-index: 150;
+            flex-direction: column; animation: fadeIn 0.3s ease;
+        }
+        .report-overlay.active { display: flex; }
+
+        .report-overlay-header {
+            background: linear-gradient(135deg, var(--warm-green), #4a8a5e);
+            color: white; padding: 10px 16px;
+            display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+        }
+        .report-overlay-title { font-size: 15px; font-weight: 700; }
+        .report-overlay-close {
+            background: rgba(255,255,255,0.9); border: none;
+            color: var(--warm-green); border-radius: 20px;
+            padding: 5px 14px; font-size: 12px; font-weight: 600;
+            cursor: pointer; font-family: inherit;
+        }
+
+        .report-overlay-body { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+
+        .report-text {
+            background: white; border: 1px solid var(--warm-border);
+            border-radius: 12px; padding: 16px;
+            font-size: 14px; line-height: 1.9;
+            white-space: pre-wrap; word-break: break-word;
+            color: var(--warm-text); min-height: 200px; outline: none;
+        }
+        .report-text:focus { border-color: var(--warm-accent); box-shadow: 0 0 0 2px rgba(59,130,182,0.15); }
+
+        .report-actions {
+            flex-shrink: 0; padding: 10px 16px;
+            background: var(--warm-card); border-top: 1px solid var(--warm-border);
+        }
+
+        .report-bottom-bar {
+            flex-shrink: 0; padding: 8px 16px;
+            background: var(--warm-bg); border-top: 1px solid var(--warm-border);
+            display: flex; justify-content: center; gap: 12px;
+        }
+        .bottom-btn {
+            background: none; border: none;
+            color: var(--warm-text-light); font-size: 13px;
+            font-family: inherit; cursor: pointer; padding: 6px 12px; transition: color 0.2s;
+        }
+        .bottom-btn:hover { color: var(--warm-accent); }
+        .bottom-btn.danger { color: #c0392b; }
+        .bottom-btn.danger:hover { color: #e74c3c; }
+
+        .edit-choices { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 50vh; overflow-y: auto; }
+        .edit-choice-btn {
+            background: white; border: 1.5px solid var(--warm-border);
+            border-radius: 10px; padding: 10px 14px;
+            font-size: 14px; text-align: left;
+            cursor: pointer; font-family: inherit; color: var(--warm-text); transition: all 0.2s;
+        }
+        .edit-choice-btn:hover { border-color: var(--warm-accent); background: #f0f7ff; }
+        .edit-choice-btn.selected { border-color: var(--warm-accent); background: #f0f7ff; font-weight: 600; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); z-index: 200;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--warm-card); border-radius: 16px;
+            padding: 24px; max-width: 420px; width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+        .modal-title { font-size: 16px; font-weight: 700; color: var(--warm-accent); margin-bottom: 14px; }
+        .modal-subtitle { font-size: 13px; color: var(--warm-text-light); margin-bottom: 14px; line-height: 1.6; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-label { font-size: 13px; font-weight: 600; color: var(--warm-text); margin-bottom: 4px; display: block; }
+        .form-input {
+            width: 100%; border: 2px solid var(--warm-border);
+            border-radius: 10px; padding: 10px 14px;
+            font-size: 14px; font-family: inherit;
+            color: var(--warm-text); background: white; outline: none;
+        }
+        .form-input:focus { border-color: var(--warm-accent); }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+        .btn-primary {
+            flex: 1; background: var(--warm-accent); color: white;
+            border: none; border-radius: 24px; padding: 11px 20px;
+            font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+        }
+        .btn-primary:hover { background: #2d6a9e; }
+        .btn-secondary {
+            background: white; color: var(--warm-text-light);
+            border: 2px solid var(--warm-border);
+            border-radius: 24px; padding: 11px 20px;
+            font-size: 14px; cursor: pointer; font-family: inherit;
+        }
+        .btn-secondary:hover { border-color: var(--warm-accent); color: var(--warm-accent); }
+
+        @media (max-width: 600px) {
+            .msg-bot, .msg-user, .msg-praise, .msg-care { max-width: 92%; font-size: 14px; }
+            .choice-btn { font-size: 13px; padding: 9px 14px; }
+            .header { padding: 8px 14px; }
+            .header-title { font-size: 14px; }
+        }
+
+        body.device-sp .choice-btn { font-size: 15px; padding: 12px 18px; min-height: 44px; }
+        body.device-sp .send-btn { width: 46px; height: 46px; }
+        body.device-sp .input-area textarea { font-size: 16px; min-height: 46px; }
+        body.device-sp .msg-bot, body.device-sp .msg-user,
+        body.device-sp .msg-praise, body.device-sp .msg-care { font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <span class="header-title">📋 週報アシスタント</span>
+    <div class="header-right">
+        <button class="header-btn" onclick="showSettings()">⚙ 設定</button>
+        <button class="header-btn" onclick="location.reload()">↺ リセット</button>
+    </div>
+</div>
+
+<div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="chat-area" id="chatArea"></div>
+
+<div class="input-area" id="inputArea">
+    <textarea id="userInput" placeholder="ここに入力してください..." rows="1"></textarea>
+    <button class="send-btn" onclick="handleSend()">➤</button>
+</div>
+
+<!-- 週報オーバーレイ -->
+<div class="report-overlay" id="reportOverlay">
+    <div class="report-overlay-header">
+        <span class="report-overlay-title" id="reportOverlayTitle">📝 週報</span>
+        <button class="report-overlay-close" onclick="closeReport()">チャットに戻る</button>
+    </div>
+    <div class="report-overlay-body">
+        <div id="reportText" class="report-text" contenteditable="true"></div>
+    </div>
+    <div class="report-actions">
+        <div class="share-banner">
+            <button onclick="copyReport(this)"><span class="share-icon">📋</span>コピー</button>
+            <button onclick="openEditSection()"><span class="share-icon">✏</span>項目を修正して再生成</button>
+            <button onclick="regenerateReport()"><span class="share-icon">🔄</span>再生成</button>
+            <button onclick="startOver()"><span class="share-icon">🆕</span>新規作成</button>
+        </div>
+    </div>
+</div>
+
+<!-- 修正項目選択モーダル -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-title">✏ どの項目を修正しますか？</div>
+        <div id="editChoices" class="edit-choices"></div>
+        <div class="btn-row">
+            <button class="btn-secondary" onclick="closeEditModal()">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- 修正フィールドモーダル -->
+<div class="modal-overlay" id="editFieldModal">
+    <div class="modal">
+        <div class="modal-title" id="editFieldTitle">項目を修正</div>
+        <textarea id="editFieldInput" class="form-input" style="min-height:120px;margin:14px 0;resize:vertical;"></textarea>
+        <div class="btn-row">
+            <button class="btn-secondary" onclick="closeEditFieldModal()">キャンセル</button>
+            <button class="btn-primary" onclick="saveEditField()">保存して再生成</button>
+        </div>
+    </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-title">⚙ AI設定</div>
+        <div class="modal-subtitle">Claude APIキーを設定すると、AIが週報を自動生成します。</div>
+        <div class="form-group">
+            <label class="form-label">APIキー</label>
+            <input id="inputApiKey" class="form-input" type="password" placeholder="sk-ant-...">
+        </div>
+        <div class="form-group">
+            <label class="form-label">モデル</label>
+            <select id="inputModel" class="form-input" style="padding:10px;">
+                <option value="claude-haiku-4-5-20251001">Haiku 4.5（高速・低コスト）</option>
+                <option value="claude-sonnet-4-5-20251001">Sonnet 4.5（バランス型）</option>
+                <option value="claude-opus-4-5-20251001">Opus 4.5（最高品質）</option>
+            </select>
+        </div>
+        <div class="btn-row">
+            <button class="btn-secondary" onclick="closeSettings()">キャンセル</button>
+            <button class="btn-primary" onclick="saveSettings()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// 状態管理
+// ============================================================
+let reporterName = '';
+let deviceType = '';
+let currentStep = 'ask_name';
+let reportData = {};
+let generatedReport = '';
+let wellbeingAsked = false;
+let negativeCount = 0;
+let apiKey = localStorage.getItem('claude_api_key') || '';
+let selectedModel = localStorage.getItem('claude_model') || 'claude-haiku-4-5-20251001';
+let editSectionKey = null;
+let isWaiting = false;
+
+const TOTAL_STEPS = 14;
+const STEP_ORDER = [
+    'ask_name','ask_device','ask_period','ask_goal_image',
+    'ask_going_well','ask_going_well_more',
+    'ask_not_well','ask_not_well_more',
+    'ask_fix','ask_seasonal','ask_seasonal_more',
+    'ask_new_tasks','ask_new_tasks_more',
+    'ask_progress','generating','complete'
+];
+
+const NEGATIVE_WORDS = [
+    '辛い','つらい','疲れ','大変','しんどい','キツい','きつい','苦しい',
+    'ストレス','嫌','いや','最悪','無理','難しい','困った','悩んでいる',
+    '不安','落ち込','焦って','やる気が出ない','眠れない','体調が悪い'
+];
+
+// ============================================================
+// DOM ヘルパー
+// ============================================================
+const chatArea = document.getElementById('chatArea');
+const inputArea = document.getElementById('inputArea');
+const userInput = document.getElementById('userInput');
+const progressBar = document.getElementById('progressBar');
+
+function scrollBottom() {
+    chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+}
+
+function updateProgress() {
+    const idx = STEP_ORDER.indexOf(currentStep);
+    const pct = Math.round((Math.max(0, idx) / (TOTAL_STEPS)) * 100);
+    progressBar.style.width = Math.min(pct, 100) + '%';
+}
+
+function addBot(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-bot';
+    el.textContent = text;
+    chatArea.appendChild(el);
+    scrollBottom();
+    return el;
+}
+
+function addUser(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-user';
+    el.textContent = text;
+    chatArea.appendChild(el);
+    scrollBottom();
+}
+
+function addPraise(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-praise';
+    el.textContent = text;
+    chatArea.appendChild(el);
+    scrollBottom();
+}
+
+function addCare(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-care';
+    el.textContent = text;
+    chatArea.appendChild(el);
+    scrollBottom();
+}
+
+function addProgress(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-progress';
+    el.textContent = text;
+    chatArea.appendChild(el);
+    scrollBottom();
+}
+
+function addLoading() {
+    const el = document.createElement('div');
+    el.className = 'loading';
+    el.innerHTML = '<span></span><span></span><span></span>';
+    chatArea.appendChild(el);
+    scrollBottom();
+    return el;
+}
+
+function addChoices(choices, onSelect) {
+    const container = document.createElement('div');
+    container.className = 'choices';
+    choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c;
+        btn.onclick = () => { container.remove(); onSelect(c); };
+        container.appendChild(btn);
+    });
+    chatArea.appendChild(container);
+    scrollBottom();
+}
+
+function addDeviceCards(onSelect) {
+    const container = document.createElement('div');
+    container.className = 'device-cards';
+    const devices = [
+        { label: 'PC・タブレット', icon: '💻', value: 'pc' },
+        { label: 'スマートフォン', icon: '📱', value: 'sp' }
+    ];
+    devices.forEach(d => {
+        const card = document.createElement('button');
+        card.className = 'device-card';
+        card.innerHTML = `<span class="device-card-icon">${d.icon}</span><span class="device-card-label">${d.label}</span>`;
+        card.onclick = () => {
+            container.querySelectorAll('.device-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            setTimeout(() => { container.remove(); onSelect(d.value, d.label); }, 300);
+        };
+        container.appendChild(card);
+    });
+    chatArea.appendChild(container);
+    scrollBottom();
+}
+
+function showInput(placeholder) {
+    userInput.value = '';
+    userInput.placeholder = placeholder || 'ここに入力してください...';
+    inputArea.classList.add('active');
+    userInput.style.height = 'auto';
+    setTimeout(() => userInput.focus(), 100);
+}
+
+function hideInput() {
+    inputArea.classList.remove('active');
+    userInput.value = '';
+}
+
+// ============================================================
+// ネガティブワード検出
+// ============================================================
+function detectNegative(text) {
+    return NEGATIVE_WORDS.some(w => text.includes(w));
+}
+
+async function doWellbeingCheck() {
+    wellbeingAsked = true;
+    await delay(400);
+    addCare(`${reporterName}さん、少し心配になってきました。\n最近、お体や気持ちの面で辛いことはありませんか？\n無理していませんか？`);
+    await delay(500);
+    addChoices(['大丈夫です、続けましょう！', '少し疲れ気味です', '相談したいことがあります'], (ans) => {
+        addUser(ans);
+        if (ans.includes('大丈夫')) {
+            addBot('そうですか、安心しました😊 引き続き聞かせてください。');
+        } else {
+            addCare('そうだったんですね。無理せず、ご自身のペースで大丈夫ですよ。\n週報作成が終わったら、信頼できる方に相談してみてくださいね。');
+        }
+        setTimeout(() => continueFlow(), 800);
+    });
+}
+
+// ============================================================
+// メインフロー
+// ============================================================
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function startFlow() {
+    updateProgress();
+    await delay(600);
+    addBot('こんにちは！✨ 週報作成アシスタントです。\n今週もお疲れさまでした。一緒に週報を作りましょう！');
+    await delay(800);
+    addBot('まず、あなたのお名前（またはニックネーム）を教えてください。');
+    showInput('例：田中、たなか、T など');
+}
+
+let continueFlowFn = null;
+
+async function continueFlow() {
+    await nextStep();
+}
+
+async function nextStep() {
+    updateProgress();
+    switch(currentStep) {
+        case 'ask_device':     await stepAskDevice();    break;
+        case 'ask_period':     await stepAskPeriod();    break;
+        case 'ask_goal_image': await stepAskGoalImage(); break;
+        case 'ask_going_well': await stepAskGoingWell(); break;
+        case 'ask_going_well_more': await stepAskGoingWellMore(); break;
+        case 'ask_not_well':   await stepAskNotWell();   break;
+        case 'ask_not_well_more': await stepAskNotWellMore(); break;
+        case 'ask_fix':        await stepAskFix();       break;
+        case 'ask_seasonal':   await stepAskSeasonal();  break;
+        case 'ask_seasonal_more': await stepAskSeasonalMore(); break;
+        case 'ask_new_tasks':  await stepAskNewTasks();  break;
+        case 'ask_new_tasks_more': await stepAskNewTasksMore(); break;
+        case 'ask_progress':   await stepAskProgress();  break;
+        case 'generating':     await stepGenerating();   break;
+        case 'complete':       await stepComplete();     break;
+    }
+}
+
+async function stepAskDevice() {
+    await delay(400);
+    addBot(`${reporterName}さん、よろしくお願いします！\n使っているデバイスを教えてください。最適な表示に調整します。`);
+    addDeviceCards((value, label) => {
+        deviceType = value;
+        addUser(label);
+        if (value === 'sp') document.body.classList.add('device-sp');
+        currentStep = 'ask_period';
+        addPraise('ありがとうございます！');
+        setTimeout(() => nextStep(), 600);
+    });
+}
+
+async function stepAskPeriod() {
+    await delay(400);
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    addBot(`今週の対象期間を教えてください。\n（例：${m}月${d - 6}日〜${m}月${d}日 など）`);
+    showInput('例：4月1日〜4月5日');
+}
+
+async function stepAskGoalImage() {
+    await delay(400);
+    addBot(`今週の目標・テーマを教えてください。\n「今週はどんな週にしようと思っていましたか？」`);
+    showInput('例：利用者との関係構築を深める、記録の精度を上げる など');
+}
+
+async function stepAskGoingWell() {
+    await delay(400);
+    addBot('今週、うまくいったこと・よかったことを教えてください。\n小さなことでも大丈夫ですよ😊');
+    showInput('例：〇〇様が笑顔を見せてくれた、申し送りがスムーズだった など');
+}
+
+async function stepAskGoingWellMore() {
+    await delay(400);
+    const loading = addLoading();
+    const aiComment = await aiReact(reportData.going_well || '', 'going_well');
+    loading.remove();
+    if (aiComment.action === 'clarify') {
+        addBot(aiComment.message);
+        showInput('もう少し詳しく教えてください（「省略」で次へ）');
+    } else {
+        addPraise(aiComment.message || `「${reportData.going_well}」素晴らしいですね！✨`);
+        currentStep = 'ask_not_well';
+        await delay(800);
+        nextStep();
+    }
+}
+
+async function stepAskNotWell() {
+    await delay(400);
+    addBot('次に、今週うまくいかなかったこと・課題に感じたことを教えてください。\n正直に書いてくれると、より良い週報が作れます。');
+    showInput('例：記録が遅れた、〇〇様の対応に迷った など（「特になし」も可）');
+}
+
+async function stepAskNotWellMore() {
+    await delay(400);
+    const loading = addLoading();
+    const aiComment = await aiReact(reportData.not_well || '', 'not_well');
+    loading.remove();
+    if (aiComment.action === 'clarify') {
+        addBot(aiComment.message);
+        showInput('もう少し詳しく教えてください（「省略」で次へ）');
+    } else {
+        addBot(aiComment.message || 'ありがとうございます。課題を整理できましたね。');
+        currentStep = 'ask_fix';
+        await delay(800);
+        nextStep();
+    }
+}
+
+async function stepAskFix() {
+    await delay(400);
+    addBot('その課題に対して、来週どのように改善・対処したいですか？');
+    showInput('例：記録の時間を決める、先輩に相談する など（「省略」も可）');
+}
+
+async function stepAskSeasonal() {
+    await delay(400);
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    addBot(`${month}月ならではの業務や行事・季節的なケアについて教えてください。\n（例：季節の行事準備、気温変化への対応など）`);
+    showInput('例：花見の準備、熱中症対策の開始 など（「特になし」も可）');
+}
+
+async function stepAskSeasonalMore() {
+    await delay(400);
+    const v = reportData.seasonal || '';
+    if (v === '特になし' || v === 'なし' || v.length < 5) {
+        currentStep = 'ask_new_tasks';
+        nextStep();
+        return;
+    }
+    const loading = addLoading();
+    const aiComment = await aiReact(v, 'seasonal');
+    loading.remove();
+    if (aiComment.action === 'clarify') {
+        addBot(aiComment.message);
+        showInput('もう少し教えてください（「省略」で次へ）');
+    } else {
+        addPraise(aiComment.message || '季節の業務もしっかり対応されていますね！');
+        currentStep = 'ask_new_tasks';
+        await delay(800);
+        nextStep();
+    }
+}
+
+async function stepAskNewTasks() {
+    await delay(400);
+    addBot('今週から取り組み始めたこと・新しい気づきはありますか？');
+    showInput('例：新しいケア方法を試した、研修で学んだことを実践 など（「特になし」も可）');
+}
+
+async function stepAskNewTasksMore() {
+    await delay(400);
+    const v = reportData.new_tasks || '';
+    if (v === '特になし' || v === 'なし' || v.length < 5) {
+        currentStep = 'ask_progress';
+        nextStep();
+        return;
+    }
+    const loading = addLoading();
+    const aiComment = await aiReact(v, 'new_tasks');
+    loading.remove();
+    if (aiComment.action === 'clarify') {
+        addBot(aiComment.message);
+        showInput('もう少し教えてください（「省略」で次へ）');
+    } else {
+        addPraise(aiComment.message || '新しい取り組み、すばらしいですね！');
+        currentStep = 'ask_progress';
+        await delay(800);
+        nextStep();
+    }
+}
+
+async function stepAskProgress() {
+    await delay(400);
+    addBot('今週の目標に対して、達成度はどのくらいでしたか？\n全体的な振り返りを教えてください。');
+    addChoices(['100%達成！', '80%くらい', '60%くらい', '50%以下', '状況が変わった'], (ans) => {
+        addUser(ans);
+        reportData.progress = ans;
+        currentStep = 'generating';
+        nextStep();
+    });
+}
+
+async function stepGenerating() {
+    await delay(400);
+    addProgress('📝 週報を生成中です...');
+    updateProgress();
+    const loading = addLoading();
+    try {
+        generatedReport = await generateReport();
+    } catch(e) {
+        generatedReport = generateTemplate();
+    }
+    loading.remove();
+    currentStep = 'complete';
+    nextStep();
+}
+
+async function stepComplete() {
+    updateProgress();
+    await delay(400);
+    addPraise(`✨ ${reporterName}さん、週報が完成しました！お疲れさまでした。`);
+    await delay(600);
+    addBot('下のボタンから週報を確認・コピーできます。');
+    const banner = document.createElement('div');
+    banner.className = 'share-banner';
+    banner.innerHTML = `
+        <button onclick="openReport()"><span class="share-icon">📄</span>週報を確認する</button>
+    `;
+    chatArea.appendChild(banner);
+    scrollBottom();
+}
+
+// ============================================================
+// ユーザー入力処理
+// ============================================================
+async function handleSend() {
+    if (isWaiting) return;
+    const text = userInput.value.trim();
+    if (!text) return;
+    hideInput();
+    addUser(text);
+
+    // ネガティブ検出
+    if (!wellbeingAsked && detectNegative(text)) {
+        negativeCount++;
+        if (negativeCount >= 2) {
+            await doWellbeingCheck();
+            return;
+        }
+    }
+
+    await processInput(text);
+}
+
+async function processInput(text) {
+    isWaiting = true;
+    try {
+        switch(currentStep) {
+            case 'ask_name':
+                reporterName = text;
+                currentStep = 'ask_device';
+                await nextStep();
+                break;
+
+            case 'ask_period':
+                reportData.period = text;
+                addProgress('✅ 期間を記録しました');
+                currentStep = 'ask_goal_image';
+                await nextStep();
+                break;
+
+            case 'ask_goal_image':
+                reportData.goal_image = text;
+                addProgress('✅ 今週の目標を記録しました');
+                currentStep = 'ask_going_well';
+                await nextStep();
+                break;
+
+            case 'ask_going_well':
+                reportData.going_well = text;
+                addProgress('✅ よかったことを記録しました');
+                currentStep = 'ask_going_well_more';
+                await nextStep();
+                break;
+
+            case 'ask_going_well_more':
+                if (text === '省略' || text === '以上です') {
+                    currentStep = 'ask_not_well';
+                } else {
+                    reportData.going_well += '\n' + text;
+                    currentStep = 'ask_not_well';
+                }
+                await nextStep();
+                break;
+
+            case 'ask_not_well':
+                reportData.not_well = text;
+                addProgress('✅ 課題を記録しました');
+                currentStep = 'ask_not_well_more';
+                await nextStep();
+                break;
+
+            case 'ask_not_well_more':
+                if (text === '省略' || text === '以上です') {
+                    currentStep = 'ask_fix';
+                } else {
+                    reportData.not_well += '\n' + text;
+                    currentStep = 'ask_fix';
+                }
+                await nextStep();
+                break;
+
+            case 'ask_fix':
+                reportData.fix = text;
+                addProgress('✅ 改善策を記録しました');
+                currentStep = 'ask_seasonal';
+                await nextStep();
+                break;
+
+            case 'ask_seasonal':
+                reportData.seasonal = text;
+                addProgress('✅ 季節業務を記録しました');
+                currentStep = 'ask_seasonal_more';
+                await nextStep();
+                break;
+
+            case 'ask_seasonal_more':
+                if (text === '省略' || text === '以上です') {
+                    currentStep = 'ask_new_tasks';
+                } else {
+                    reportData.seasonal += '\n' + text;
+                    currentStep = 'ask_new_tasks';
+                }
+                await nextStep();
+                break;
+
+            case 'ask_new_tasks':
+                reportData.new_tasks = text;
+                addProgress('✅ 新しい取り組みを記録しました');
+                currentStep = 'ask_new_tasks_more';
+                await nextStep();
+                break;
+
+            case 'ask_new_tasks_more':
+                if (text === '省略' || text === '以上です') {
+                    currentStep = 'ask_progress';
+                } else {
+                    reportData.new_tasks += '\n' + text;
+                    currentStep = 'ask_progress';
+                }
+                await nextStep();
+                break;
+        }
+    } finally {
+        isWaiting = false;
+    }
+}
+
+// ============================================================
+// Claude API 連携
+// ============================================================
+async function callClaude(systemPrompt, userMessage) {
+    const key = apiKey;
+    if (!key) throw new Error('APIキーが設定されていません');
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+            model: selectedModel,
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userMessage }]
+        })
+    });
+
+    if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+    const data = await resp.json();
+    return data.content[0].text;
+}
+
+async function aiReact(input, section) {
+    try {
+        const sectionNames = {
+            going_well: 'よかったこと・うまくいったこと',
+            not_well: '課題・うまくいかなかったこと',
+            seasonal: '季節の業務・行事',
+            new_tasks: '新しい取り組み・気づき'
+        };
+        const sectionName = sectionNames[section] || section;
+
+        const systemPrompt = `あなたは介護・福祉施設のスタッフが週報を作成するのをサポートするアシスタントです。
+スタッフが入力した内容を読んで、以下のどちらかを判断してください：
+- clarify: もっと詳しく聞いたほうが良い（内容が曖昧・短すぎる場合）
+- move_on: 十分な内容が得られた（次のステップへ進む）
+
+応答はJSON形式で返してください：
+{"action": "clarify" または "move_on", "message": "スタッフへの一言コメント（30字以内）"}
+
+clarifyの場合は、具体的に何を聞けばよいか自然な問いかけ文にしてください。
+move_onの場合は、入力内容を認め励ます短いコメントにしてください。
+温かみのある丁寧な言葉を使い、介護スタッフへの敬意を示してください。`;
+
+        const raw = await callClaude(systemPrompt, `セクション：${sectionName}\n入力内容：${input}`);
+        const json = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);
+        return json;
+    } catch(e) {
+        // フォールバック：5文字以下なら詳しく聞く
+        if (input.length <= 5) {
+            return { action: 'clarify', message: 'もう少し詳しく教えていただけますか？' };
+        }
+        return { action: 'move_on', message: 'ありがとうございます！しっかり記録できました。' };
+    }
+}
+
+async function generateReport() {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+
+    const systemPrompt = `あなたは介護・福祉施設スタッフの週報作成を支援するプロです。
+提供された情報をもとに、読みやすく温かみのある週報を日本語で作成してください。
+
+出力形式：
+【週報】${reporterName} / ${reportData.period || dateStr}
+
+■ 今週の目標
+（目標内容）
+
+■ 取り組みと成果
+（うまくいったこと・成果）
+
+■ 課題と対応
+（課題・うまくいかなかったこと、改善策）
+
+■ 季節・行事対応
+（季節的な業務や行事）
+
+■ 新しい取り組み・気づき
+（新しい取り組み）
+
+■ 達成度と振り返り
+（進捗・総括）
+
+■ 来週の目標
+（来週に向けた意気込みを一言）
+
+自然で読みやすい文章で、各項目を2〜4文でまとめてください。
+ポジティブで前向きなトーンを維持してください。`;
+
+    const userMsg = `スタッフ名：${reporterName}
+対象期間：${reportData.period || '今週'}
+今週の目標：${reportData.goal_image || '未記入'}
+うまくいったこと：${reportData.going_well || '未記入'}
+課題・うまくいかなかったこと：${reportData.not_well || '未記入'}
+改善策：${reportData.fix || '未記入'}
+季節の業務：${reportData.seasonal || '特になし'}
+新しい取り組み：${reportData.new_tasks || '特になし'}
+達成度：${reportData.progress || '未記入'}`;
+
+    return await callClaude(systemPrompt, userMsg);
+}
+
+function generateTemplate() {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+    return `【週報】${reporterName} / ${reportData.period || dateStr}
+
+■ 今週の目標
+${reportData.goal_image || '（未記入）'}
+
+■ 取り組みと成果
+${reportData.going_well || '（未記入）'}
+
+■ 課題と対応
+課題：${reportData.not_well || '（未記入）'}
+改善策：${reportData.fix || '（未記入）'}
+
+■ 季節・行事対応
+${reportData.seasonal || '特になし'}
+
+■ 新しい取り組み・気づき
+${reportData.new_tasks || '特になし'}
+
+■ 達成度と振り返り
+達成度：${reportData.progress || '未記入'}
+
+■ 来週の目標
+来週も引き続き頑張ります。`;
+}
+
+// ============================================================
+// 週報オーバーレイ
+// ============================================================
+function openReport() {
+    document.getElementById('reportText').textContent = generatedReport;
+    document.getElementById('reportOverlayTitle').textContent = `📝 ${reporterName}さんの週報`;
+    document.getElementById('reportOverlay').classList.add('active');
+}
+
+function closeReport() {
+    document.getElementById('reportOverlay').classList.remove('active');
+}
+
+async function copyReport(btn) {
+    const text = document.getElementById('reportText').innerText || document.getElementById('reportText').textContent;
+    try {
+        await navigator.clipboard.writeText(text);
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span class="share-icon">✅</span>コピー完了！';
+        setTimeout(() => btn.innerHTML = orig, 2000);
+    } catch(e) {
+        alert('コピーに失敗しました。手動で選択してコピーしてください。');
+    }
+}
+
+async function regenerateReport() {
+    const overlay = document.getElementById('reportOverlay');
+    const textEl = document.getElementById('reportText');
+    textEl.textContent = '再生成中...';
+    try {
+        generatedReport = await generateReport();
+    } catch(e) {
+        generatedReport = generateTemplate();
+    }
+    textEl.textContent = generatedReport;
+}
+
+function startOver() {
+    if (confirm('新しい週報を作成します。現在の内容は消えますがよろしいですか？')) {
+        location.reload();
+    }
+}
+
+// ============================================================
+// 修正項目選択
+// ============================================================
+const EDIT_SECTIONS = [
+    { key: 'goal_image', label: '今週の目標' },
+    { key: 'going_well', label: 'うまくいったこと' },
+    { key: 'not_well',   label: '課題・うまくいかなかったこと' },
+    { key: 'fix',        label: '改善策' },
+    { key: 'seasonal',   label: '季節・行事対応' },
+    { key: 'new_tasks',  label: '新しい取り組み' },
+    { key: 'progress',   label: '達成度' }
+];
+
+function openEditSection() {
+    const container = document.getElementById('editChoices');
+    container.innerHTML = '';
+    EDIT_SECTIONS.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'edit-choice-btn';
+        btn.textContent = s.label;
+        btn.onclick = () => openEditField(s.key, s.label);
+        container.appendChild(btn);
+    });
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+function openEditField(key, label) {
+    closeEditModal();
+    editSectionKey = key;
+    document.getElementById('editFieldTitle').textContent = `✏ ${label}を修正`;
+    document.getElementById('editFieldInput').value = reportData[key] || '';
+    document.getElementById('editFieldModal').classList.add('active');
+}
+
+function closeEditFieldModal() {
+    document.getElementById('editFieldModal').classList.remove('active');
+    editSectionKey = null;
+}
+
+async function saveEditField() {
+    const newVal = document.getElementById('editFieldInput').value.trim();
+    if (editSectionKey && newVal) {
+        reportData[editSectionKey] = newVal;
+    }
+    closeEditFieldModal();
+    await regenerateReport();
+}
+
+// ============================================================
+// 設定モーダル
+// ============================================================
+function showSettings() {
+    document.getElementById('inputApiKey').value = apiKey;
+    document.getElementById('inputModel').value = selectedModel;
+    document.getElementById('settingsModal').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+
+function saveSettings() {
+    apiKey = document.getElementById('inputApiKey').value.trim();
+    selectedModel = document.getElementById('inputModel').value;
+    localStorage.setItem('claude_api_key', apiKey);
+    localStorage.setItem('claude_model', selectedModel);
+    closeSettings();
+    addBot('設定を保存しました。');
+}
+
+// ============================================================
+// キーボード送信
+// ============================================================
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+    }
+});
+
+userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+});
+
+// ============================================================
+// 起動
+// ============================================================
+startFlow();
+</script>
+</body>
+</html>
