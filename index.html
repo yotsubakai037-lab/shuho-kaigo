@@ -925,7 +925,7 @@ async function stepAskCategory() {
     const num = `（${currentCategoryIndex + 1}/${selectedCategories.length}）`;
     addProgress(`📋 ${cat.icon} ${cat.name} ${num}`);
     await delay(300);
-    addBot(`${residentName}様の【${cat.name}】について教えてください。`);
+    addBot(`【${cat.name}】について教えてください。`);
     showInput(cat.placeholder);
 }
 
