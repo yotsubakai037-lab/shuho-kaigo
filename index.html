@@ -691,7 +691,6 @@ function updateProgress() {
     const total = ALL_CATEGORIES.length + 3; // device + period + categories + progress
     const done = (currentStep === 'ask_period') ? 1
                : (currentStep === 'ask_category') ? 2 + currentCategoryIndex
-               : (currentStep === 'ask_progress') ? 2 + ALL_CATEGORIES.length
                : (currentStep === 'generating' || currentStep === 'complete') ? total
                : 0;
     const pct = Math.round((done / total) * 100);
@@ -891,7 +890,6 @@ async function nextStep() {
         case 'ask_device':   await stepAskDevice();   break;
         case 'ask_period':   await stepAskPeriod();   break;
         case 'ask_category': await stepAskCategory(); break;
-        case 'ask_progress': await stepAskProgress(); break;
         case 'generating':   await stepGenerating();  break;
         case 'complete':     await stepComplete();    break;
     }
@@ -921,7 +919,7 @@ async function stepAskPeriod() {
 
 async function stepAskCategory() {
     const cat = ALL_CATEGORIES.find(c => c.name === selectedCategories[currentCategoryIndex]);
-    if (!cat) { currentStep = 'ask_progress'; await nextStep(); return; }
+    if (!cat) { currentStep = 'generating'; await nextStep(); return; }
 
     await delay(400);
     const num = `（${currentCategoryIndex + 1}/${selectedCategories.length}）`;
@@ -929,17 +927,6 @@ async function stepAskCategory() {
     await delay(300);
     addBot(`【${cat.name}】について教えてください。`);
     showInput(cat.placeholder);
-}
-
-async function stepAskProgress() {
-    await delay(400);
-    addBot('今週の目標に対して、達成度はどのくらいでしたか？\n全体的な振り返りを教えてください。');
-    addChoices(['100%達成！', '80%くらい', '60%くらい', '50%以下', '状況が変わった'], (ans) => {
-        addUser(ans);
-        categoryAnswers['__progress__'] = ans;
-        currentStep = 'generating';
-        nextStep();
-    });
 }
 
 async function stepGenerating() {
@@ -1031,7 +1018,7 @@ async function processInput(text) {
                 if (currentCategoryIndex < selectedCategories.length) {
                     await nextStep(); // 次のカテゴリへ
                 } else {
-                    currentStep = 'ask_progress';
+                    currentStep = 'generating';
                     await nextStep();
                 }
                 break;
