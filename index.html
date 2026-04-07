@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>週報作成アシスタント</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
@@ -590,6 +591,7 @@
     <div class="report-actions">
         <div class="share-banner">
             <button onclick="copyReport(this)"><span class="share-icon">📋</span>コピー</button>
+            <button onclick="downloadPDF(this)"><span class="share-icon">📄</span>PDFダウンロード</button>
             <button onclick="openEditSection()"><span class="share-icon">✏</span>項目を修正して再生成</button>
             <button onclick="regenerateReport()"><span class="share-icon">🔄</span>再生成</button>
             <button onclick="startOver()"><span class="share-icon">🆕</span>新規作成</button>
@@ -1173,6 +1175,37 @@ function openReport() {
 
 function closeReport() {
     document.getElementById('reportOverlay').classList.remove('active');
+}
+
+async function downloadPDF(btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="share-icon">⏳</span>生成中...';
+    btn.disabled = true;
+
+    const text = document.getElementById('reportText').innerText || document.getElementById('reportText').textContent;
+    const now = new Date();
+    const fileName = `週報_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.pdf`;
+
+    const el = document.createElement('div');
+    el.style.cssText = 'font-family:"Noto Sans JP",sans-serif;font-size:13px;line-height:1.9;color:#2c3e50;padding:24px;white-space:pre-wrap;word-break:break-word;';
+    el.textContent = text;
+
+    const opt = {
+        margin: [15, 15, 15, 15],
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+        await html2pdf().set(opt).from(el).save();
+    } catch(e) {
+        alert('PDF生成に失敗しました。');
+    }
+
+    btn.innerHTML = orig;
+    btn.disabled = false;
 }
 
 async function copyReport(btn) {
