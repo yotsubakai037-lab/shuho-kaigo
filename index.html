@@ -524,131 +524,6 @@
         .role-btn-label { font-size: 15px; font-weight: 700; color: var(--warm-text); }
         .role-btn-desc { font-size: 11px; color: var(--warm-text-light); margin-top: 4px; }
 
-        /* 入居者入力画面 */
-        .resident-screen {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(160deg, #e8f0fb 0%, #f0f4f8 60%, #e8f5ec 100%);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 24px;
-            animation: fadeIn 0.35s ease;
-        }
-        .resident-screen.active { display: flex; }
-        .resident-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: white;
-            border: 2px solid var(--warm-border);
-            border-radius: 20px;
-            padding: 5px 14px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--warm-text-light);
-            margin-bottom: 20px;
-        }
-
-        /* カテゴリ選択画面 */
-        .category-screen {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(160deg, #e8f0fb 0%, #f0f4f8 60%, #e8f5ec 100%);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            animation: fadeIn 0.35s ease;
-        }
-        .category-screen.active { display: flex; }
-        .category-header {
-            background: linear-gradient(135deg, #3b82b6, #5a9ec0);
-            color: white;
-            padding: 14px 20px 10px;
-            flex-shrink: 0;
-        }
-        .category-header-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-        .category-header-sub { font-size: 12px; opacity: 0.85; }
-        .category-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            -webkit-overflow-scrolling: touch;
-        }
-        .category-info-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .category-count {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--warm-accent);
-        }
-        .category-ctrl-btns { display: flex; gap: 8px; }
-        .category-ctrl-btn {
-            background: white;
-            border: 1.5px solid var(--warm-border);
-            border-radius: 14px;
-            padding: 4px 12px;
-            font-size: 12px;
-            font-family: inherit;
-            color: var(--warm-text-light);
-            cursor: pointer;
-        }
-        .category-ctrl-btn:hover { border-color: var(--warm-accent); color: var(--warm-accent); }
-        .category-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .category-chip {
-            background: white;
-            border: 2px solid var(--warm-border);
-            border-radius: 22px;
-            padding: 9px 16px;
-            font-size: 14px;
-            font-family: inherit;
-            color: var(--warm-text);
-            cursor: pointer;
-            transition: all 0.18s;
-            font-weight: 500;
-            user-select: none;
-        }
-        .category-chip:hover { border-color: var(--warm-accent-light); }
-        .category-chip.selected {
-            background: var(--warm-accent);
-            border-color: var(--warm-accent);
-            color: white;
-            box-shadow: 0 2px 8px rgba(59,130,182,0.3);
-        }
-        .category-chip:active { transform: scale(0.96); }
-        .category-footer {
-            flex-shrink: 0;
-            padding: 12px 16px;
-            background: var(--warm-card);
-            border-top: 1px solid var(--warm-border);
-        }
-        .category-next-btn {
-            width: 100%;
-            background: linear-gradient(135deg, var(--warm-accent), #5a9ec0);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            letter-spacing: 0.5px;
-        }
-        .category-next-btn:disabled { opacity: 0.4; cursor: default; }
-        .category-next-btn:not(:disabled):hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -676,42 +551,6 @@
             <span class="role-btn-icon">🏠</span>
             <span class="role-btn-label">居室担当</span>
             <div class="role-btn-desc">利用者ケア担当</div>
-        </button>
-    </div>
-</div>
-
-<!-- 入居者様氏名入力画面 -->
-<div class="resident-screen" id="residentScreen">
-    <div class="start-logo">🏠</div>
-    <div class="resident-badge" id="residentBadge"></div>
-    <div class="start-title" style="margin-bottom:6px;">入居者様の情報</div>
-    <div class="start-subtitle">週報を作成する入居者様のお名前を<br>入力してください</div>
-    <div class="start-card">
-        <label class="start-label" for="residentNameInput">入居者様 氏名</label>
-        <input id="residentNameInput" class="start-input" type="text" placeholder="例：山田 花子 様" maxlength="30" autocomplete="off">
-        <button id="residentBtn" class="start-btn" onclick="confirmResident()" disabled>次へ ➤</button>
-    </div>
-</div>
-
-<!-- カテゴリ選択画面 -->
-<div class="category-screen" id="categoryScreen">
-    <div class="category-header">
-        <div class="category-header-title">📝 記録する項目を選択</div>
-        <div class="category-header-sub" id="categoryHeaderSub"></div>
-    </div>
-    <div class="category-body">
-        <div class="category-info-bar">
-            <span class="category-count" id="categoryCount">0項目選択中</span>
-            <div class="category-ctrl-btns">
-                <button class="category-ctrl-btn" onclick="selectAllCategories()">全選択</button>
-                <button class="category-ctrl-btn" onclick="clearAllCategories()">全解除</button>
-            </div>
-        </div>
-        <div class="category-grid" id="categoryGrid"></div>
-    </div>
-    <div class="category-footer">
-        <button class="category-next-btn" id="categoryNextBtn" onclick="confirmCategories()" disabled>
-            選択した項目で週報を作成する ➤
         </button>
     </div>
 </div>
@@ -847,10 +686,11 @@ const ALL_CATEGORIES = [
 ];
 
 function updateProgress() {
-    const total = selectedCategories.length + 3; // device + period + categories + progress
-    const done = (currentStep === 'ask_period') ? 1
-               : (currentStep === 'ask_category') ? 2 + currentCategoryIndex
-               : (currentStep === 'ask_progress') ? 2 + selectedCategories.length
+    const total = ALL_CATEGORIES.length + 4; // device + resident + period + categories + progress
+    const done = (currentStep === 'ask_resident') ? 1
+               : (currentStep === 'ask_period') ? 2
+               : (currentStep === 'ask_category') ? 3 + currentCategoryIndex
+               : (currentStep === 'ask_progress') ? 3 + ALL_CATEGORIES.length
                : (currentStep === 'generating' || currentStep === 'complete') ? total
                : 0;
     const pct = Math.round((done / total) * 100);
@@ -1021,83 +861,19 @@ function startApp() {
 
 function selectRole(role) {
     reporterRole = role;
-    document.getElementById('roleScreen').classList.remove('active');
-    // 入居者入力画面へ
-    document.getElementById('residentBadge').textContent = `${reporterName}（${reporterRole}）`;
-    document.getElementById('residentScreen').classList.add('active');
-    setTimeout(() => document.getElementById('residentNameInput').focus(), 100);
-}
-
-document.getElementById('residentNameInput').addEventListener('input', function() {
-    document.getElementById('residentBtn').disabled = this.value.trim().length === 0;
-});
-document.getElementById('residentNameInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && this.value.trim()) confirmResident();
-});
-
-function confirmResident() {
-    const name = document.getElementById('residentNameInput').value.trim();
-    if (!name) return;
-    residentName = name;
-    document.getElementById('residentScreen').classList.remove('active');
-    showCategoryScreen();
-}
-
-// ============================================================
-// カテゴリ選択画面
-// ============================================================
-function showCategoryScreen() {
-    document.getElementById('categoryHeaderSub').textContent =
-        `${residentName}様 ／ ${reporterName}（${reporterRole}）`;
-    const grid = document.getElementById('categoryGrid');
-    grid.innerHTML = '';
-    ALL_CATEGORIES.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.className = 'category-chip';
-        btn.textContent = `${cat.icon} ${cat.name}`;
-        btn.dataset.name = cat.name;
-        btn.onclick = () => toggleCategory(btn, cat.name);
-        grid.appendChild(btn);
-    });
-    document.getElementById('categoryScreen').classList.add('active');
-}
-
-function toggleCategory(btn, name) {
-    btn.classList.toggle('selected');
-    updateCategoryCount();
-}
-
-function selectAllCategories() {
-    document.querySelectorAll('.category-chip').forEach(b => b.classList.add('selected'));
-    updateCategoryCount();
-}
-
-function clearAllCategories() {
-    document.querySelectorAll('.category-chip').forEach(b => b.classList.remove('selected'));
-    updateCategoryCount();
-}
-
-function updateCategoryCount() {
-    const count = document.querySelectorAll('.category-chip.selected').length;
-    document.getElementById('categoryCount').textContent = `${count}項目選択中`;
-    document.getElementById('categoryNextBtn').disabled = count === 0;
-}
-
-function confirmCategories() {
-    selectedCategories = [...document.querySelectorAll('.category-chip.selected')]
-        .map(b => b.dataset.name);
-    if (selectedCategories.length === 0) return;
+    // 全カテゴリをセット（チャット内で順番に質問する）
+    selectedCategories = ALL_CATEGORIES.map(c => c.name);
     currentCategoryIndex = 0;
     categoryAnswers = {};
     currentStep = 'ask_device';
-    document.getElementById('categoryScreen').classList.remove('active');
+    document.getElementById('roleScreen').classList.remove('active');
     startFlow();
 }
 
 async function startFlow() {
     updateProgress();
     await delay(400);
-    addBot(`${reporterName}さん（${reporterRole}）、こんにちは！✨\n今週もお疲れさまでした。\n${residentName}様の週報を一緒に作りましょう！`);
+    addBot(`${reporterName}さん（${reporterRole}）、こんにちは！✨\n今週もお疲れさまでした。一緒に週報を作りましょう！`);
     await delay(600);
     nextStep();
 }
@@ -1112,6 +888,7 @@ async function nextStep() {
     updateProgress();
     switch(currentStep) {
         case 'ask_device':   await stepAskDevice();   break;
+        case 'ask_resident': await stepAskResident(); break;
         case 'ask_period':   await stepAskPeriod();   break;
         case 'ask_category': await stepAskCategory(); break;
         case 'ask_progress': await stepAskProgress(); break;
@@ -1127,10 +904,16 @@ async function stepAskDevice() {
         deviceType = value;
         addUser(label);
         if (value === 'sp') document.body.classList.add('device-sp');
-        currentStep = 'ask_period';
+        currentStep = 'ask_resident';
         addPraise('ありがとうございます！');
         setTimeout(() => nextStep(), 600);
     });
+}
+
+async function stepAskResident() {
+    await delay(400);
+    addBot('週報を作成する入居者様のお名前を教えてください。');
+    showInput('例：山田 花子');
 }
 
 async function stepAskPeriod() {
@@ -1221,6 +1004,13 @@ async function processInput(text) {
     isWaiting = true;
     try {
         switch(currentStep) {
+            case 'ask_resident':
+                residentName = text;
+                addProgress(`✅ 入居者様：${residentName}さん`);
+                currentStep = 'ask_period';
+                await nextStep();
+                break;
+
             case 'ask_period':
                 categoryAnswers['__period__'] = text;
                 addProgress('✅ 期間を記録しました');
