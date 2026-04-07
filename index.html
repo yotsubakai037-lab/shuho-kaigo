@@ -686,11 +686,10 @@ const ALL_CATEGORIES = [
 ];
 
 function updateProgress() {
-    const total = ALL_CATEGORIES.length + 4; // device + resident + period + categories + progress
-    const done = (currentStep === 'ask_resident') ? 1
-               : (currentStep === 'ask_period') ? 2
-               : (currentStep === 'ask_category') ? 3 + currentCategoryIndex
-               : (currentStep === 'ask_progress') ? 3 + ALL_CATEGORIES.length
+    const total = ALL_CATEGORIES.length + 3; // device + period + categories + progress
+    const done = (currentStep === 'ask_period') ? 1
+               : (currentStep === 'ask_category') ? 2 + currentCategoryIndex
+               : (currentStep === 'ask_progress') ? 2 + ALL_CATEGORIES.length
                : (currentStep === 'generating' || currentStep === 'complete') ? total
                : 0;
     const pct = Math.round((done / total) * 100);
@@ -888,7 +887,6 @@ async function nextStep() {
     updateProgress();
     switch(currentStep) {
         case 'ask_device':   await stepAskDevice();   break;
-        case 'ask_resident': await stepAskResident(); break;
         case 'ask_period':   await stepAskPeriod();   break;
         case 'ask_category': await stepAskCategory(); break;
         case 'ask_progress': await stepAskProgress(); break;
@@ -904,16 +902,10 @@ async function stepAskDevice() {
         deviceType = value;
         addUser(label);
         if (value === 'sp') document.body.classList.add('device-sp');
-        currentStep = 'ask_resident';
+        currentStep = 'ask_period';
         addPraise('ありがとうございます！');
         setTimeout(() => nextStep(), 600);
     });
-}
-
-async function stepAskResident() {
-    await delay(400);
-    addBot('週報を作成する入居者様のお名前を教えてください。');
-    showInput('例：山田 花子');
 }
 
 async function stepAskPeriod() {
@@ -1004,13 +996,6 @@ async function processInput(text) {
     isWaiting = true;
     try {
         switch(currentStep) {
-            case 'ask_resident':
-                residentName = text;
-                addProgress(`✅ 入居者様：${residentName}さん`);
-                currentStep = 'ask_period';
-                await nextStep();
-                break;
-
             case 'ask_period':
                 categoryAnswers['__period__'] = text;
                 addProgress('✅ 期間を記録しました');
