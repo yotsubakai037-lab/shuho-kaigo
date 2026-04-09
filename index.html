@@ -525,6 +525,23 @@
         .role-btn-label { font-size: 15px; font-weight: 700; color: var(--warm-text); }
         .role-btn-desc { font-size: 11px; color: var(--warm-text-light); margin-top: 4px; }
 
+        /* AI hint area */
+        .ai-hint {
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #eef5ff, #f3efff);
+            border-top: 1px solid #cce0f7;
+            padding: 8px 16px;
+            display: none;
+            align-items: flex-start;
+            gap: 6px;
+            animation: fadeIn 0.3s ease;
+        }
+        .ai-hint.active { display: flex; }
+        .ai-hint-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+        .ai-hint-body { font-size: 12px; color: #4a6090; line-height: 1.7; }
+        .ai-hint-label { font-weight: 700; margin-right: 4px; color: #3b6abf; }
+        .ai-hint-loading { color: #9bb0c4; font-style: italic; }
+
     </style>
 </head>
 <body>
@@ -577,6 +594,12 @@
 <div class="input-area" id="inputArea">
     <textarea id="userInput" placeholder="ここに入力してください..." rows="1"></textarea>
     <button class="send-btn" onclick="handleSend()">➤</button>
+</div>
+
+<!-- AI hint area -->
+<div class="ai-hint" id="aiHint">
+    <span class="ai-hint-icon">💡</span>
+    <div class="ai-hint-body"><span class="ai-hint-label">AIアドバイス:</span><span id="aiHintText"></span></div>
 </div>
 
 <!-- 週報オーバーレイ -->
@@ -668,23 +691,40 @@ let isWaiting = false;
 
 // 全カテゴリ定義
 const ALL_CATEGORIES = [
-    { name: 'グッドポイント',       icon: '⭐', placeholder: '今週良かった点・変化を教えてください' },
-    { name: '移動・移乗',           icon: '🚶', placeholder: '移動・移乗の状況（介助量・安全面など）を教えてください' },
-    { name: '食事',                 icon: '🍽', placeholder: '摂取量・食欲・嚥下の状況を教えてください' },
-    { name: '排泄',                 icon: '🚽', placeholder: '排泄の状況（回数・量・失禁の有無など）を教えてください' },
-    { name: '入浴',                 icon: '🛁', placeholder: '入浴の状況（拒否・皮膚・介助量など）を教えてください' },
-    { name: 'バイタル',             icon: '💓', placeholder: '体温・血圧・脈拍・SpO2などを教えてください' },
-    { name: '皮膚',                 icon: '🩺', placeholder: '皮膚の状態（褥瘡・発赤・乾燥など）を教えてください' },
-    { name: '服薬変更後の変化',     icon: '💊', placeholder: '服薬変更後に見られた変化を教えてください' },
-    { name: '痛み',                 icon: '😣', placeholder: '痛みの部位・程度・頻度などを教えてください' },
-    { name: '認知症周辺症状',       icon: '🧠', placeholder: 'BPSD（徘徊・興奮・幻覚など）の状況を教えてください' },
-    { name: '聴力',                 icon: '👂', placeholder: '聴力の状況（補聴器・聞こえ方など）を教えてください' },
-    { name: '視力',                 icon: '👁',  placeholder: '視力の状況（眼鏡・見え方など）を教えてください' },
-    { name: '体重',                 icon: '⚖',  placeholder: '今週の体重と前回比を教えてください' },
-    { name: '生活リズム',           icon: '🌙', placeholder: '睡眠・日中の活動パターンなどを教えてください' },
-    { name: '家族',                 icon: '👨‍👩‍👧', placeholder: 'ご家族との面会・連絡・関係性を教えてください' },
-    { name: '見た目の変化',         icon: '👀', placeholder: '表情・様子・雰囲気の変化を教えてください' },
-    { name: 'その他',               icon: '📌', placeholder: '特記事項・気になることを教えてください' },
+    { name: 'グッドポイント',       icon: '⭐', placeholder: '今週良かった点・変化を教えてください',
+      question: '今週、最も手応えを感じた瞬間や、利用者様の嬉しい変化を教えてください ✨（AIが具体化をサポートします）' },
+    { name: '移動・移乗',           icon: '🚶', placeholder: '移動・移乗の状況（介助量・安全面など）を教えてください',
+      question: '歩行や車椅子移乗の様子はいかがでしたか？介助量や安全面で気になった点も教えてください' },
+    { name: '食事',                 icon: '🍽', placeholder: '摂取量・食欲・嚥下の状況を教えてください',
+      question: '食欲や摂取量はどうでしたか？主食・副食それぞれ「○割」の形式で教えていただけると助かります' },
+    { name: '排泄',                 icon: '🚽', placeholder: '排泄の状況（回数・量・失禁の有無など）を教えてください',
+      question: '排泄の回数・量・失禁の有無など、今週気になった点を教えてください' },
+    { name: '入浴',                 icon: '🛁', placeholder: '入浴の状況（拒否・皮膚・介助量など）を教えてください',
+      question: '入浴時の様子はいかがでしたか？拒否や皮膚の状態、介助量の変化も教えてください' },
+    { name: 'バイタル',             icon: '💓', placeholder: '体温・血圧・脈拍・SpO2などを教えてください',
+      question: '体温・血圧・脈拍・SpO2など、今週気になった数値の変動はありましたか？' },
+    { name: '皮膚',                 icon: '🩺', placeholder: '皮膚の状態（褥瘡・発赤・乾燥など）を教えてください',
+      question: '皮膚の状態はいかがでしたか？発赤・乾燥・褥瘡など気になる箇所があれば教えてください' },
+    { name: '服薬変更後の変化',     icon: '💊', placeholder: '服薬変更後に見られた変化を教えてください',
+      question: '薬が変わった後、体調や行動・表情に何か変化は見られましたか？' },
+    { name: '痛み',                 icon: '😣', placeholder: '痛みの部位・程度・頻度などを教えてください',
+      question: '痛みを訴える場面はありましたか？部位・程度・頻度を教えていただけると助かります' },
+    { name: '認知症周辺症状',       icon: '🧠', placeholder: 'BPSD（徘徊・興奮・幻覚など）の状況を教えてください',
+      question: '徘徊・興奮・幻覚など、今週気になったBPSDの状況を教えてください' },
+    { name: '聴力',                 icon: '👂', placeholder: '聴力の状況（補聴器・聞こえ方など）を教えてください',
+      question: '聞こえ方に変化はありましたか？補聴器の使用状況も教えてください' },
+    { name: '視力',                 icon: '👁',  placeholder: '視力の状況（眼鏡・見え方など）を教えてください',
+      question: '見え方に気になる変化はありましたか？眼鏡の使用状況も教えてください' },
+    { name: '体重',                 icon: '⚖',  placeholder: '今週の体重と前回比を教えてください',
+      question: '今週の体重と、先週からの増減を教えてください（例：48.2kg、先週比-0.3kg）' },
+    { name: '生活リズム',           icon: '🌙', placeholder: '睡眠・日中の活動パターンなどを教えてください',
+      question: '睡眠の様子や日中の活動パターンに変化はありましたか？中途覚醒や昼夜逆転なども教えてください' },
+    { name: '家族',                 icon: '👨‍👩‍👧', placeholder: 'ご家族との面会・連絡・関係性を教えてください',
+      question: 'ご家族との面会やお電話など、今週の関わりを教えてください' },
+    { name: '見た目の変化',         icon: '👀', placeholder: '表情・様子・雰囲気の変化を教えてください',
+      question: '表情・雰囲気・様子で「いつもと違うな」と感じた点はありましたか？' },
+    { name: 'その他',               icon: '📌', placeholder: '特記事項・気になることを教えてください',
+      question: '他に気になること、多職種に共有しておきたい特記事項があれば何でも教えてください' },
 ];
 
 function updateProgress() {
@@ -812,6 +852,7 @@ function showInput(placeholder) {
 function hideInput() {
     inputArea.classList.remove('active');
     userInput.value = '';
+    hideAiHint();
 }
 
 // ============================================================
@@ -925,7 +966,7 @@ async function stepAskCategory() {
     const num = `（${currentCategoryIndex + 1}/${selectedCategories.length}）`;
     addProgress(`📋 ${cat.icon} ${cat.name} ${num}`);
     await delay(300);
-    addBot(`【${cat.name}】について教えてください。`);
+    addBot(cat.question || `【${cat.name}】について教えてください。`);
     showInput(cat.placeholder);
 }
 
@@ -966,6 +1007,7 @@ async function handleSend() {
     if (isWaiting) return;
     const text = userInput.value.trim();
     if (!text) return;
+    hideAiHint();
     hideInput();
     addUser(text);
 
@@ -1312,6 +1354,66 @@ function saveSettings() {
 }
 
 // ============================================================
+// AIリアルタイムヒント
+// ============================================================
+let hintTimer = null;
+let hintAbortController = null;
+
+function showAiHint(text) {
+    document.getElementById('aiHintText').textContent = text;
+    document.getElementById('aiHint').classList.add('active');
+}
+
+function showAiHintLoading() {
+    document.getElementById('aiHintText').innerHTML = '<span class="ai-hint-loading">考え中...</span>';
+    document.getElementById('aiHint').classList.add('active');
+}
+
+function hideAiHint() {
+    clearTimeout(hintTimer);
+    if (hintAbortController) { hintAbortController.abort(); hintAbortController = null; }
+    document.getElementById('aiHint').classList.remove('active');
+}
+
+async function updateAiHint(text) {
+    clearTimeout(hintTimer);
+    if (!apiKey || text.length < 8 || currentStep !== 'ask_category') {
+        hideAiHint();
+        return;
+    }
+    hintTimer = setTimeout(async () => {
+        const catName = selectedCategories[currentCategoryIndex];
+        if (!catName) return;
+        showAiHintLoading();
+        if (hintAbortController) hintAbortController.abort();
+        hintAbortController = new AbortController();
+        try {
+            const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                signal: hintAbortController.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-haiku-4-5-20251001',
+                    max_tokens: 60,
+                    system: `介護週報【${catName}】の項目を入力中のスタッフへ、入力内容を踏まえて「次に追記すると週報が充実する情報」を20〜35字の自然な一文でアドバイスしてください。「〜も記入しましょう」「〜はいかがでしたか？」形式で。`,
+                    messages: [{ role: 'user', content: text }]
+                })
+            });
+            if (!resp.ok) { hideAiHint(); return; }
+            const data = await resp.json();
+            showAiHint(data.content[0].text.trim());
+        } catch(e) {
+            if (e.name !== 'AbortError') hideAiHint();
+        }
+    }, 700);
+}
+
+// ============================================================
 // キーボード送信
 // ============================================================
 userInput.addEventListener('keydown', (e) => {
@@ -1321,6 +1423,7 @@ userInput.addEventListener('keydown', (e) => {
 userInput.addEventListener('input', () => {
     userInput.style.height = 'auto';
     userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+    updateAiHint(userInput.value.trim());
 });
 
 // ============================================================
