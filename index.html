@@ -1375,15 +1375,46 @@ function hideAiHint() {
     document.getElementById('aiHint').classList.remove('active');
 }
 
+const STATIC_HINTS = {
+    'グッドポイント': '利用者様の具体的な言葉や表情も添えると伝わりやすくなります',
+    '移動・移乗': '「一部介助」「全介助」など介助量の変化も記入しましょう',
+    '食事': '主食○割、副食○割の形式で摂取量を記入するとわかりやすいです',
+    '排泄': '失禁の有無・回数・量など具体的な数値も記入しましょう',
+    '入浴': '拒否があった場合は対応方法も記入すると引き継ぎに役立ちます',
+    'バイタル': '数値（例：体温36.5℃、血圧120/80）を具体的に記入しましょう',
+    '皮膚': '部位・大きさ・色調など状態の詳細も記入しましょう',
+    '服薬変更後の変化': '変更前後の違いを具体的に比較して記入するとわかりやすいです',
+    '痛み': '痛みの程度をNRSスケール（0〜10）で表現するのも有効です',
+    '認知症周辺症状': '時間帯・頻度・対応方法も合わせて記入しましょう',
+    '聴力': '補聴器の使用有無と、聞こえ方の変化を記入しましょう',
+    '視力': '眼鏡の使用状況と日常生活への影響も記入しましょう',
+    '体重': '先週との増減（例：+0.2kg）と測定日も記入するとよいです',
+    '生活リズム': '就寝・起床時刻や中途覚醒の有無も記入しましょう',
+    '家族': '面会時の利用者様の様子や反応も記入すると喜ばれます',
+    '見た目の変化': 'いつ頃から・どんな場面でその変化が見られたかも記入しましょう',
+    'その他': '多職種が読むことを意識して、5W1Hで整理して記入しましょう',
+};
+
 async function updateAiHint(text) {
     clearTimeout(hintTimer);
-    if (!apiKey || text.length < 8 || currentStep !== 'ask_category') {
+    if (text.length < 4 || currentStep !== 'ask_category') {
         hideAiHint();
         return;
     }
+    const catName = selectedCategories[currentCategoryIndex];
+    if (!catName) return;
+
+    // APIキーなし → 静的ヒントをすぐ表示
+    if (!apiKey) {
+        hintTimer = setTimeout(() => {
+            const hint = STATIC_HINTS[catName];
+            if (hint) showAiHint(hint);
+        }, 500);
+        return;
+    }
+
+    // APIキーあり → AI動的ヒント
     hintTimer = setTimeout(async () => {
-        const catName = selectedCategories[currentCategoryIndex];
-        if (!catName) return;
         showAiHintLoading();
         if (hintAbortController) hintAbortController.abort();
         hintAbortController = new AbortController();
@@ -1404,11 +1435,14 @@ async function updateAiHint(text) {
                     messages: [{ role: 'user', content: text }]
                 })
             });
-            if (!resp.ok) { hideAiHint(); return; }
+            if (!resp.ok) {
+                showAiHint(STATIC_HINTS[catName] || '');
+                return;
+            }
             const data = await resp.json();
             showAiHint(data.content[0].text.trim());
         } catch(e) {
-            if (e.name !== 'AbortError') hideAiHint();
+            if (e.name !== 'AbortError') showAiHint(STATIC_HINTS[catName] || '');
         }
     }, 700);
 }
