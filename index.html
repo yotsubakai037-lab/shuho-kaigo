@@ -1315,10 +1315,7 @@ function saveSettings() {
 // キーボード送信
 // ============================================================
 userInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-    }
+    // Enterキーでは送信しない（送信ボタンのみ）
 });
 
 userInput.addEventListener('input', () => {
